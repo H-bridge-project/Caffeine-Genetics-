@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYP1A2 유전자 변이에 따른 카페인 대사 특성 비교</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+    body { background-color: #f8fafc; color: #1e293b; padding: 20px; line-height: 1.6; }
+    .container { max-width: 900px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 28px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+    
+    h1 { font-size: 1.5rem; color: #0f172a; margin-bottom: 8px; font-weight: 700; }
+    p.subtitle { font-size: 0.95rem; color: #64748b; margin-bottom: 24px; }
+
+    /* 유전자형 선택 탭 */
+    .genotype-selector { display: flex; gap: 12px; margin-bottom: 24px; }
+    .genotype-btn { flex: 1; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; background: #fff; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .genotype-btn:hover { border-color: #cbd5e1; }
+    .genotype-btn.active { border-color: #2563eb; background: #eff6ff; }
+    .genotype-btn .title { font-weight: 700; font-size: 1.1rem; color: #1e293b; }
+    .genotype-btn.active .title { color: #2563eb; }
+    .genotype-btn .sub { font-size: 0.85rem; color: #64748b; margin-top: 4px; }
+
+    /* 비교 카드 그리드 */
+    .comparison-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; }
+    .card-title { font-size: 0.9rem; color: #64748b; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; }
+    .card-value { font-size: 1.4rem; font-weight: 700; color: #0f172a; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-top: 8px; }
+    .badge-fast { background: #dcfce7; color: #15803d; }
+    .badge-slow { background: #fef3c7; color: #b45309; }
+
+    /* 시각화 프로그래스 바 */
+    .viz-section { background: #f1f5f9; padding: 20px; border-radius: 12px; margin-bottom: 24px; }
+    .bar-group { margin-bottom: 16px; }
+    .bar-group:last-child { margin-bottom: 0; }
+    .bar-label { font-size: 0.88rem; font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .bar-container { height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
+    .bar-fill { height: 100%; transition: width 0.4s ease; border-radius: 6px; }
+    .fill-fast { background: #22c55e; }
+    .fill-slow { background: #f59e0b; }
+
+    /* 세부 특징 안내 */
+    .detail-box { border-left: 4px solid #2563eb; background: #eff6ff; padding: 16px; border-radius: 0 12px 12px 0; }
+    .detail-box h3 { font-size: 1rem; color: #1e3a8a; margin-bottom: 6px; }
+    .detail-box ul { list-style: none; padding-left: 0; }
+    .detail-box li { font-size: 0.9rem; color: #1e40af; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .detail-box li::before { content: "•"; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>CYP1A2 유전자 변이별 카페인 대사 특성 비교</h1>
+  <p class="subtitle">유전자형에 따른 카페인 분해 속도, 반감기 및 생리학적 영향 비교</p>
+
+  <!-- 유전자형 선택 버튼 -->
+  <div class="genotype-selector">
+    <div class="genotype-btn active" onclick="selectGenotype('fast')">
+      <div class="title">AA 형 (빠른 대사형)</div>
+      <div class="sub">CYP1A2*1A / *1A</div>
+    </div>
+    <div class="genotype-btn" onclick="selectGenotype('slow')">
+      <div class="title">AC / CC 형 (느린 대사형)</div>
+      <div class="sub">CYP1A2*1F 변이 보유자</div>
+    </div>
+  </div>
+
+  <!-- 핵심지표 비교 카드 -->
+  <div class="comparison-grid">
+    <div class="card">
+      <div class="card-title">카페인 반감기 (t½)</div>
+      <div class="card-value" id="halfLifeText">약 3 ~ 4 시간</div>
+      <span class="badge badge-fast" id="halfLifeBadge">빠른 분해</span>
+    </div>
+    <div class="card">
+      <div class="card-title">효소 활성도 (CYP1A2)</div>
+      <div class="card-value" id="activityText">높음 (High)</div>
+      <span class="badge badge-fast" id="activityBadge">정상/항진</span>
+    </div>
+    <div class="card">
+      <div class="card-title">수면 및 심혈관 민감도</div>
+      <div class="card-value" id="sensitivityText">낮음</div>
+      <span class="badge badge-fast" id="sensitivityBadge">부작용 위험 낮음</span>
+    </div>
+  </div>
+
+  <!-- 대사 속도 및 혈중 잔류 시각화 -->
+  <div class="viz-section">
+    <div class="bar-group">
+      <div class="bar-label">
+        <span>간 내 카페인 분해 속도 (Clearence Rate)</span>
+        <span id="ratePercent">100% (기준)</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar-fill fill-fast" id="rateBar" style="width: 90%;"></div>
+      </div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label">
+        <span>섭취 6시간 후 체내 잔류 카페인 비율</span>
+        <span id="residualPercent">약 25 ~ 30%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar-fill fill-fast" id="residualBar" style="width: 28%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 상세 특징 기술 -->
+  <div class="detail-box">
+    <h3 id="detailTitle">AA형 (빠른 대사형) 주요 특징</h3>
+    <ul id="detailList">
+      <li>카페인이 간에서 효소에 의해 빠르게 파라잔틴, 테오브로민 등으로 대사됩니다.</li>
+      <li>동일량의 카페인을 섭취하더라도 혈중 카페인 농도가 빠르게 감소합니다.</li>
+      <li>적정량 섭취 시 운동 수행 능력 향상 및 집중력 증진 효과를 효과적으로 얻을 수 있습니다.</li>
+      <li>오후 늦게 섭취하더라도 수면 장애(불면증)가 발생할 확률이 비교적 낮습니다.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  const genotypeData = {
+    fast: {
+      halfLife: "약 3 ~ 4 시간",
+      halfLifeBadge: "빠른 분해",
+      halfLifeBadgeClass: "badge-fast",
+      activity: "높음 (High)",
+      activityBadge: "정상/항진",
+      activityBadgeClass: "badge-fast",
+      sensitivity: "낮음",
+      sensitivityBadge: "부작용 위험 낮음",
+      sensitivityBadgeClass: "badge-fast",
+      ratePercent: "100% (기준)",
+      rateWidth: "90%",
+      rateClass: "fill-fast",
+      residualPercent: "약 25 ~ 30%",
+      residualWidth: "28%",
+      residualClass: "fill-fast",
+      title: "AA형 (빠른 대사형) 주요 특징",
+      details: [
+        "카페인이 간에서 효소에 의해 빠르게 파라잔틴, 테오브로민 등으로 대사됩니다.",
+        "동일량의 카페인을 섭취하더라도 혈중 카페인 농도가 빠르게 감소합니다.",
+        "적정량 섭취 시 운동 수행 능력 향상 및 집중력 증진 효과를 효과적으로 얻을 수 있습니다.",
+        "오후 늦게 섭취하더라도 수면 장애(불면증)가 발생할 확률이 비교적 낮습니다."
+      ]
+    },
+    slow: {
+      halfLife: "약 6 ~ 10 시간 이상",
+      halfLifeBadge: "지연된 분해",
+      halfLifeBadgeClass: "badge-slow",
+      activity: "낮음 (Low)",
+      activityBadge: "활성 감소",
+      activityBadgeClass: "badge-slow",
+      sensitivity: "높음",
+      sensitivityBadge: "부작용 주의 필요",
+      sensitivityBadgeClass: "badge-slow",
+      ratePercent: "약 40 ~ 50%",
+      rateWidth: "45%",
+      rateClass: "fill-slow",
+      residualPercent: "약 50 ~ 65%",
+      residualWidth: "60%",
+      residualClass: "fill-slow",
+      title: "AC / CC형 (느린 대사형) 주요 특징",
+      details: [
+        "CYP1A2 유전자 C 변이로 인해 카페인 대사 효소의 발현 및 활성도가 낮습니다.",
+        "카페인이 체내에 오래 머물러 가슴 두근거림, 불안, 손 떨림 등의 증상이 유발되기 쉽습니다.",
+        "오후 2시 이후 카페인 섭취 시 수면의 질 저하 및 입면 장애를 유발할 수 있습니다.",
+        "고용량 카페인 장기 섭취 시 심혈관계 부담(고혈압 위험 등)이 증가할 수 있어 섭취량 조절이 필요합니다."
+      ]
+    }
+  };
+
+  function selectGenotype(type) {
+    const btns = document.querySelectorAll('.genotype-btn');
+    btns[0].classList.toggle('active', type === 'fast');
+    btns[1].classList.toggle('active', type === 'slow');
+
+    const data = genotypeData[type];
+    document.getElementById('halfLifeText').innerText = data.halfLife;
+    document.getElementById('halfLifeBadge').innerText = data.halfLifeBadge;
+    document.getElementById('halfLifeBadge').className = `badge ${data.halfLifeBadgeClass}`;
+
+    document.getElementById('activityText').innerText = data.activity;
+    document.getElementById('activityBadge').innerText = data.activityBadge;
+    document.getElementById('activityBadge').className = `badge ${data.activityBadgeClass}`;
+
+    document.getElementById('sensitivityText').innerText = data.sensitivity;
+    document.getElementById('sensitivityBadge').innerText = data.sensitivityBadge;
+    document.getElementById('sensitivityBadge').className = `badge ${data.sensitivityBadgeClass}`;
+
+    document.getElementById('ratePercent').innerText = data.ratePercent;
+    const rateBar = document.getElementById('rateBar');
+    rateBar.style.width = data.rateWidth;
+    rateBar.className = `bar-fill ${data.rateClass}`;
+
+    document.getElementById('residualPercent').innerText = data.residualPercent;
+    const residualBar = document.getElementById('residualBar');
+    residualBar.style.width = data.residualWidth;
+    residualBar.className = `bar-fill ${data.residualClass}`;
+
+    document.getElementById('detailTitle').innerText = data.title;
+    const detailList = document.getElementById('detailList');
+    detailList.innerHTML = data.details.map(item => `<li>${item}</li>`).join('');
+  }
+</script>
+
+</body>
+</html>
