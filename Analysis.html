@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>카페인 관련 유전자 변이 대사 및 민감도 비교 분석</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+    body { background-color: #f8fafc; color: #1e293b; padding: 20px; line-height: 1.6; }
+    .container { max-width: 980px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 28px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+    
+    h1 { font-size: 1.5rem; color: #0f172a; margin-bottom: 8px; font-weight: 700; }
+    p.subtitle { font-size: 0.95rem; color: #64748b; margin-bottom: 20px; }
+
+    .section-title { font-size: 1.05rem; font-weight: 700; color: #334155; margin: 24px 0 10px 0; display: flex; align-items: center; gap: 6px; }
+    .section-title::before { content: ""; display: inline-block; width: 4px; height: 16px; background-color: #2563eb; border-radius: 2px; }
+
+    .group-label { font-size: 0.88rem; font-weight: 600; color: #475569; margin: 8px 0 6px 2px; }
+
+    .genotype-selector { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .genotype-btn { padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; background: #fff; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .genotype-btn:hover { border-color: #cbd5e1; }
+    .genotype-btn.active { border-color: #2563eb; background: #eff6ff; }
+    .genotype-btn .title { font-weight: 700; font-size: 0.95rem; color: #1e293b; }
+    .genotype-btn.active .title { color: #2563eb; }
+    .genotype-btn .sub { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
+
+    .comparison-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; }
+    .card-title { font-size: 0.9rem; color: #64748b; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; }
+    .card-value { font-size: 1.3rem; font-weight: 700; color: #0f172a; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-top: 8px; }
+    .badge-fast { background: #dcfce7; color: #15803d; }
+    .badge-slow { background: #fef3c7; color: #b45309; }
+    .badge-critical { background: #fee2e2; color: #991b1b; }
+
+    .viz-section { background: #f1f5f9; padding: 20px; border-radius: 12px; margin-bottom: 24px; }
+    .bar-group { margin-bottom: 16px; }
+    .bar-group:last-child { margin-bottom: 0; }
+    .bar-label { font-size: 0.88rem; font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .bar-container { height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; }
+    .bar-fill { height: 100%; transition: width 0.4s ease; border-radius: 6px; }
+    .fill-fast { background: #22c55e; }
+    .fill-slow { background: #f59e0b; }
+    .fill-critical { background: #ef4444; }
+
+    .detail-box { border-left: 4px solid #2563eb; background: #eff6ff; padding: 16px; border-radius: 0 12px 12px 0; }
+    .detail-box h3 { font-size: 1rem; color: #1e3a8a; margin-bottom: 6px; }
+    .detail-box ul { list-style: none; padding-left: 0; }
+    .detail-box li { font-size: 0.9rem; color: #1e40af; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .detail-box li::before { content: "•"; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>카페인 관련 유전자 변이 대사 및 민감도 비교 분석</h1>
+  <p class="subtitle">통합 분석: CYP1A2 간 대사 효소 변이(야생형 vs 변이형 1:1 비교) 및 ADORA2A 수용체 민감도(2군 비교)</p>
+
+  <!-- 1. CYP1A2 유전자 변이 분석 -->
+  <div class="section-title">1. CYP1A2 유전자 변이 (간 카페인 대사 동역학, PK)</div>
+  
+  <div class="group-label">① 프로모터 조절부 변이 (rs762551)</div>
+  <div class="genotype-selector">
+    <div class="genotype-btn active" onclick="selectGenotype('cyp_aa')">
+      <div class="title">AA 형 (빠른 대사형)</div>
+      <div class="sub">A/A 동형접합체 (기준 야생형)</div>
+    </div>
+    <div class="genotype-btn" onclick="selectGenotype('cyp_ac_cc')">
+      <div class="title">AC / CC 형 (느린 대사형)</div>
+      <div class="sub">A/C 또는 C/C 변이형</div>
+    </div>
+  </div>
+
+  <div class="group-label">② 386번 아미노산 변이 (I386I 야생형 vs I386F 변이)</div>
+  <div class="genotype-selector">
+    <div class="genotype-btn" onclick="selectGenotype('cyp_i386i')">
+      <div class="title">I386I (정상 야생형)</div>
+      <div class="sub">386번 이소류신 유지 (정상 대사)</div>
+    </div>
+    <div class="genotype-btn" onclick="selectGenotype('cyp_i386f')">
+      <div class="title">I386F (기능 저하 변이)</div>
+      <div class="sub">I386I → 페닐알라닌(F) 치환</div>
+    </div>
+  </div>
+
+  <div class="group-label">③ 281번 아미노산 변이 (R281R 야생형 vs R281W 변이)</div>
+  <div class="genotype-selector">
+    <div class="genotype-btn" onclick="selectGenotype('cyp_r281r')">
+      <div class="title">R281R (정상 야생형)</div>
+      <div class="sub">281번 아르기닌 유지 (정상 대사)</div>
+    </div>
+    <div class="genotype-btn" onclick="selectGenotype('cyp_r281w')">
+      <div class="title">R281W (효소 결핍 변이)</div>
+      <div class="sub">R281R → 트립토판(W) 치환</div>
+    </div>
+  </div>
+
+  <!-- 2. ADORA2A 유전자 변이 분석 (2개 군으로 명확 분리) -->
+  <div class="section-title">2. ADORA2A 유전자 변이 (아데노신 수용체 민감도 & 불안, PD)</div>
+  <div class="genotype-selector">
+    <div class="genotype-btn" onclick="selectGenotype('adora_tt')">
+      <div class="title">TT 형 (고민감 · 불안 유발형)</div>
+      <div class="sub">T/T 동형접합체 (고위험군)</div>
+    </div>
+    <div class="genotype-btn" onclick="selectGenotype('adora_ct_cc')">
+      <div class="title">CT / CC 형 (중간~저민감 · 내성형)</div>
+      <div class="sub">C 대립유전자 보유군 (대조군)</div>
+    </div>
+  </div>
+
+  <!-- 핵심지표 비교 카드 -->
+  <div class="comparison-grid">
+    <div class="card">
+      <div class="card-title" id="cardTitle1">카페인 반감기 (t½)</div>
+      <div class="card-value" id="halfLifeText">약 3 ~ 4 시간</div>
+      <span class="badge badge-fast" id="halfLifeBadge">빠른 분해</span>
+    </div>
+    <div class="card">
+      <div class="card-title" id="cardTitle2">효소 활성도 / 수용체 민감도</div>
+      <div class="card-value" id="activityText">높음 (High)</div>
+      <span class="badge badge-fast" id="activityBadge">정상/항진</span>
+    </div>
+    <div class="card">
+      <div class="card-title" id="cardTitle3">수면 장애 및 부작용 위험도</div>
+      <div class="card-value" id="sensitivityText">낮음</div>
+      <span class="badge badge-fast" id="sensitivityBadge">부작용 위험 낮음</span>
+    </div>
+  </div>
+
+  <!-- 시각화 프로그래스 바 -->
+  <div class="viz-section">
+    <div class="bar-group">
+      <div class="bar-label">
+        <span id="barLabel1">간 내 카페인 분해 속도 (Clearance Rate)</span>
+        <span id="ratePercent">100% (기준)</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar-fill fill-fast" id="rateBar" style="width: 90%;"></div>
+      </div>
+    </div>
+    <div class="bar-group">
+      <div class="bar-label">
+        <span id="barLabel2">섭취 6시간 후 체내 잔류 카페인 비율</span>
+        <span id="residualPercent">약 25 ~ 30%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar-fill fill-fast" id="residualBar" style="width: 28%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 상세 특징 안내 -->
+  <div class="detail-box">
+    <h3 id="detailTitle">CYP1A2 rs762551 AA형 (빠른 대사형) 주요 특징</h3>
+    <ul id="detailList">
+      <li>카페인이 간에서 CYP1A2 효소에 의해 빠르게 파라잔틴 등으로 대사됩니다.</li>
+      <li>동일량 섭취 시에도 혈중 카페인 농도가 빠르게 감소합니다.</li>
+      <li>오후 늦게 섭취해도 수면 장애(불면증)가 발생할 확률이 비교적 낮습니다.</li>
+      <li>적정량 섭취 시 각성 및 운동 수행 능력 향상 효과가 뚜렷합니다.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  const genotypeData = {
+    cyp_aa: {
+      cardTitle1: "카페인 반감기 (t½)",
+      cardTitle2: "효소 활성도",
+      cardTitle3: "수면 장애 및 부작용 위험도",
+      halfLife: "약 3 ~ 4 시간",
+      halfLifeBadge: "빠른 분해",
+      halfLifeBadgeClass: "badge-fast",
+      activity: "높음 (High)",
+      activityBadge: "정상/항진",
+      activityBadgeClass: "badge-fast",
+      sensitivity: "낮음",
+      sensitivityBadge: "부작용 위험 낮음",
+      sensitivityBadgeClass: "badge-fast",
+      ratePercent: "100% (기준)",
+      rateWidth: "90%",
+      rateClass: "fill-fast",
+      residualPercent: "약 25 ~ 30%",
+      residualWidth: "28%",
+      residualClass: "fill-fast",
+      bar1Text: "간 내 카페인 분해 속도 (Clearance Rate)",
+      bar2Text: "섭취 6시간 후 체내 잔류 카페인 비율",
+      title: "CYP1A2 rs762551 AA형 (빠른 대사형) 주요 특징",
+      details: [
+        "카페인이 간에서 CYP1A2 효소에 의해 빠르게 파라잔틴 등으로 대사됩니다.",
+        "동일량 섭취 시에도 혈중 카페인 농도가 빠르게 감소합니다.",
+        "오후 늦게 섭취해도 수면 장애(불면증)가 발생할 확률이 비교적 낮습니다.",
+        "적정량 섭취 시 각성 및 운동 수행 능력 향상 효과가 뚜렷합니다."
+      ]
+    },
+    cyp_ac_cc: {
+      cardTitle1: "카페인 반감기 (t½)",
+      cardTitle2: "효소 활성도",
+      cardTitle3: "수면 장애 및 부작용 위험도",
+      halfLife: "약 6 ~ 10 시간",
+      halfLifeBadge: "지연된 분해",
+      halfLifeBadgeClass: "badge-slow",
+      activity: "낮음 (Low)",
+      activityBadge: "활성 감소",
+      activityBadgeClass: "badge-slow",
+      sensitivity: "높음",
+      sensitivityBadge: "부작용 주의 필요",
+      sensitivityBadgeClass: "badge-slow",
+      ratePercent: "약 40 ~ 50%",
+      rateWidth: "45%",
+      rateClass: "fill-slow",
+      residualPercent: "약 50 ~ 65%",
+      residualWidth: "60%",
+      residualClass: "fill-slow",
+      bar1Text: "간 내 카페인 분해 속도 (Clearance Rate)",
+      bar2Text: "섭취 6시간 후 체내 잔류 카페인 비율",
+      title: "CYP1A2 rs762551 AC / CC형 (느린 대사형) 주요 특징",
+      details: [
+        "C 대립유전자 보유로 인해 카페인 대사 효소 발현 및 활성도가 낮습니다.",
+        "기준 야생형(AA형)에 비해 카페인이 체내에 길게 유지됩니다.",
+        "오후 2시 이후 카페인 섭취 시 입면 장애 및 수면 질 저하를 유발합니다.",
+        "장기 다량 섭취 시 심혈관계 부담이 증가할 수 있어 조절이 필요합니다."
+      ]
+    },
+    cyp_i386i: {
+      cardTitle1: "카페인 반감기 (t½)",
+      cardTitle2: "효소 활성도",
+      cardTitle3: "수면 장애 및 부작용 위험도",
+      halfLife: "약 4 ~ 5 시간",
+      halfLifeBadge: "정상 분해",
+      halfLifeBadgeClass: "badge-fast",
+      activity: "정상 (Normal)",
+      activityBadge: "야생형 정상",
+      activityBadgeClass: "badge-fast",
+      sensitivity: "보통/낮음",
+      sensitivityBadge: "부작용 위험 낮음",
+      sensitivityBadgeClass: "badge-fast",
+      ratePercent: "100% (정상 기준)",
+      rateWidth: "85%",
+      rateClass: "fill-fast",
+      residualPercent: "약 30 ~ 35%",
+      residualWidth: "32%",
+      residualClass: "fill-fast",
+      bar1Text: "간 내 카페인 분해 속도 (Clearance Rate)",
+      bar2Text: "섭취 6시간 후 체내 잔류 카페인 비율",
+      title: "CYP1A2 I386I (정상 야생형) 주요 특징",
+      details: [
+        "386번 위치 아미노산이 정상적인 이소류신(I)으로 유지되는 대조군 야생형 단백질입니다.",
+        "효소의 3차원 기질 결합 입구 구조에 변형이 없어 카페인과의 정상적인 입체적 결합이 이루어집니다.",
+        "변이형(I386F)과 달리 카페인을 안정적인 속도로 분해 및 대사합니다."
+      ]
+    },
+    cyp_i386f: {
+      cardTitle1: "카페인 반감기 (t½)",
+      cardTitle2: "효소 활성도",
+      cardTitle3: "수면 장애 및 부작용 위험도",
+      halfLife: "약 8 ~ 12 시간 이상",
+      halfLifeBadge: "기능 저하 변이",
+      halfLifeBadgeClass: "badge-critical",
+      activity: "매우 낮음",
+      activityBadge: "구조 변형 저하",
+      activityBadgeClass: "badge-critical",
+      sensitivity: "매우 높음",
+      sensitivityBadge: "고위험군",
+      sensitivityBadgeClass: "badge-critical",
+      ratePercent: "약 20 ~ 30%",
+      rateWidth: "25%",
+      rateClass: "fill-critical",
+      residualPercent: "약 70 ~ 80%",
+      residualWidth: "75%",
+      residualClass: "fill-critical",
+      bar1Text: "간 내 카페인 분해 속도 (Clearance Rate)",
+      bar2Text: "섭취 6시간 후 체내 잔류 카페인 비율",
+      title: "CYP1A2 I386F 변이형 (vs I386I 정상 야생형 비교) 주요 특징",
+      details: [
+        "정상 야생형(I386I)의 이소류신이 페닐알라닌(F)으로 치환된 구조적 미스센스 변이입니다.",
+        "정상 I386I 표적 구조 대비 페닐알라닌의 부피 큰 벤젠 고리로 인해 기질 결합 공간에 steric hindrance(입체 장애)가 발생합니다.",
+        "야생형(I386I) 대비 카페인 친화도와 대사 속도가 현저히 저하됩니다.",
+        "소량의 카페인 섭취 시에도 장시간 분해 지연으로 심한 두통 및 심계항진을 유발합니다."
+      ]
+    },
+    cyp_r281r: {
+      cardTitle1: "카페인 반감기 (t½)",
+      cardTitle2: "효소 활성도",
+      cardTitle3: "수면 장애 및 부작용 위험도",
+      halfLife: "약 4 ~ 5 시간",
+      halfLifeBadge: "정상 분해",
+      halfLifeBadgeClass: "badge-fast",
+      activity: "정상 (Normal)",
+      activityBadge: "야생형 정상",
+      activityBadgeClass: "badge-fast",
+      sensitivity: "보통/낮음",
+      sensitivityBadge: "부작용 위험 낮음",
+      sensitivityBadgeClass: "badge-fast",
+      ratePercent: "100% (정상 기준)",
+      rateWidth: "85%",
+      rateClass: "fill-fast",
+      residualPercent: "약 30 ~ 35%",
+      residualWidth: "32%",
+      residualClass: "fill-fast",
+      bar1Text: "간 내 카페인 분해 속도 (Clearance Rate)",
+      bar2Text: "섭취 6시간 후 체내 잔류 카페인 비율",
+      title: "CYP1A2 R281R (정상 야생형) 주요 특징",
+      details: [
+        "281번 위치 아미노산이 양전하를 띤 정상 아르기닌(R)으로 유지되는 기준 야생형 단백질입니다.",
+        "아르기닌 잔기가 단백질 3차 구조에서 수소결합 및 전하적 안정성을 형성하여 효소 구조가 견고히 유지됩니다.",
+        "변이형(R281W)과 달리 촉매 부위의 헴(Heme) 결합 안정성이 우수하여 정체 없는 대사를 수행합니다."
+      ]
+    },
+    cyp_r281w: {
+      cardTitle1: "카페인 반감기 (t½)",
+      cardTitle2: "효소 활성도",
+      cardTitle3: "수면 장애 및 부작용 위험도",
+      halfLife: "약 12 시간 이상",
+      halfLifeBadge: "효소 활성 상실",
+      halfLifeBadgeClass: "badge-critical",
+      activity: "결핍 수준 (Null)",
+      activityBadge: "기능 불능 변이",
+      activityBadgeClass: "badge-critical",
+      sensitivity: "매우 높음",
+      sensitivityBadge: "고위험군",
+      sensitivityBadgeClass: "badge-critical",
+      ratePercent: "약 15 ~ 25%",
+      rateWidth: "20%",
+      rateClass: "fill-critical",
+      residualPercent: "약 75 ~ 85%",
+      residualWidth: "80%",
+      residualClass: "fill-critical",
+      bar1Text: "간 내 카페인 분해 속도 (Clearance Rate)",
+      bar2Text: "섭취 6시간 후 체내 잔류 카페인 비율",
+      title: "CYP1A2 R281W 변이형 (vs R281R 정상 야생형 비교) 주요 특징",
+      details: [
+        "정상 야생형(R281R)의 아르기닌이 거대한 소수성 아미노산인 트립토판(W)으로 치환된 변이입니다.",
+        "정상 R281R 단백질이 가지던 정전기적 3차 구조 네트워크가 깨지며 효소 구조의 치명적 붕괴를 유발합니다.",
+        "촉매 활성을 사실상 완전히 상실한 Null(기능 결핍) 아형으로 정상 야생형 대비 카페인 분해가 거의 불가능합니다.",
+        "체내 카페인이 심각하게 축적되므로 카페인 및 특정 화학약물 섭취를 엄격히 금해야 합니다."
+      ]
+    },
+    adora_tt: {
+      cardTitle1: "반응 특성",
+      cardTitle2: "아데노신 수용체 민감도",
+      cardTitle3: "불안 및 수면 장애 위험도",
+      halfLife: "대사 속도 무관",
+      halfLifeBadge: "수용체 고민감성",
+      halfLifeBadgeClass: "badge-critical",
+      activity: "A2A 수용체",
+      activityBadge: "결합 민감도 높음",
+      activityBadgeClass: "badge-critical",
+      sensitivity: "매우 높음",
+      sensitivityBadge: "불안·초조 취약",
+      sensitivityBadgeClass: "badge-critical",
+      ratePercent: "카페인 각성 및 불안 반응 강도",
+      rateWidth: "90%",
+      rateClass: "fill-critical",
+      residualPercent: "중등도 섭취 시 수면 장애 유발 확률",
+      residualWidth: "85%",
+      residualClass: "fill-critical",
+      bar1Text: "카페인에 의한 주관적 각성/불안 반응 지수",
+      bar2Text: "중등도 카페인 섭취 시 수면 장애/초조 확률",
+      title: "ADORA2A TT형 (고민감 · 불안 유발 고위험군) 주요 특징",
+      details: [
+        "아데노신 수용체 유전자(rs5751876)가 TT 동형으로 중추신경계 반응성이 매우 예민합니다.",
+        "간 분해 속도(CYP1A2)가 빠른 사람이라도 TT형 수용체를 가지면 적은 카페인에도 불안감과 심계항진을 느낍니다.",
+        "카페인 섭취 시 뇌 아데노신 차단 작용에 대한 감수성이 커서 수면 뇌파(REM/깊은 수면) 교란이 크게 일어납니다."
+      ]
+    },
+    adora_ct_cc: {
+      cardTitle1: "반응 특성",
+      cardTitle2: "아데노신 수용체 민감도",
+      cardTitle3: "불안 및 수면 장애 위험도",
+      halfLife: "대사 속도 무관",
+      halfLifeBadge: "중간~저민감성",
+      halfLifeBadgeClass: "badge-fast",
+      activity: "A2A 수용체",
+      activityBadge: "결합 민감도 보통~낮음",
+      activityBadgeClass: "badge-fast",
+      sensitivity: "보통 / 낮음",
+      sensitivityBadge: "내성/안정형",
+      sensitivityBadgeClass: "badge-fast",
+      ratePercent: "카페인 각성 및 불안 반응 강도",
+      rateWidth: "40%",
+      rateClass: "fill-fast",
+      residualPercent: "중등도 섭취 시 수면 장애 유발 확률",
+      residualWidth: "35%",
+      residualClass: "fill-fast",
+      bar1Text: "카페인에 의한 주관적 각성/불안 반응 지수",
+      bar2Text: "중등도 카페인 섭취 시 수면 장애/초조 확률",
+      title: "ADORA2A CT / CC형 (중간~저민감 · 내성 대조군) 주요 특징",
+      details: [
+        "C 대립유전자를 보유(CT 이형접합체 또는 CC 동형접합체)하여 신경계 과민 반응이 적은 그룹입니다.",
+        "TT형 대비 카페인 섭취로 인한 심리적 불안, 긴장, 가슴 두근거림 증상이 현저히 낮게 발생합니다.",
+        "카페인의 긍정적인 집중력 향상 및 피로 회복 효과를 안정적으로 얻기 쉬운 유형입니다."
+      ]
+    }
+  };
+
+  function selectGenotype(type) {
+    const btns = document.querySelectorAll('.genotype-btn');
+    btns.forEach((btn) => {
+      btn.classList.remove('active');
+      if (btn.getAttribute('onclick').includes(`'${type}'`)) {
+        btn.classList.add('active');
+      }
+    });
+
+    const data = genotypeData[type];
+    document.getElementById('cardTitle1').innerText = data.cardTitle1;
+    document.getElementById('cardTitle2').innerText = data.cardTitle2;
+    document.getElementById('cardTitle3').innerText = data.cardTitle3;
+
+    document.getElementById('halfLifeText').innerText = data.halfLife;
+    document.getElementById('halfLifeBadge').innerText = data.halfLifeBadge;
+    document.getElementById('halfLifeBadge').className = `badge ${data.halfLifeBadgeClass}`;
+
+    document.getElementById('activityText').innerText = data.activity;
+    document.getElementById('activityBadge').innerText = data.activityBadge;
+    document.getElementById('activityBadge').className = `badge ${data.activityBadgeClass}`;
+
+    document.getElementById('sensitivityText').innerText = data.sensitivity;
+    document.getElementById('sensitivityBadge').innerText = data.sensitivityBadge;
+    document.getElementById('sensitivityBadge').className = `badge ${data.sensitivityBadgeClass}`;
+
+    document.getElementById('barLabel1').innerText = data.bar1Text;
+    document.getElementById('ratePercent').innerText = data.ratePercent;
+    const rateBar = document.getElementById('rateBar');
+    rateBar.style.width = data.rateWidth;
+    rateBar.className = `bar-fill ${data.rateClass}`;
+
+    document.getElementById('barLabel2').innerText = data.bar2Text;
+    document.getElementById('residualPercent').innerText = data.residualPercent;
+    const residualBar = document.getElementById('residualBar');
+    residualBar.style.width = data.residualWidth;
+    residualBar.className = `bar-fill ${data.residualClass}`;
+
+    document.getElementById('detailTitle').innerText = data.title;
+    const detailList = document.getElementById('detailList');
+    detailList.innerHTML = data.details.map(item => `<li>${item}</li>`).join('');
+  }
+</script>
+
+</body>
+</html>
